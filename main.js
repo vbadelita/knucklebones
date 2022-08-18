@@ -58,11 +58,14 @@ class Column {
         this.cells[first_empty] = die;
     }
 
+    non_empty() {
+        return this.cells.filter(cell => cell != -1);
+    }
+
     die_counts() {
-        const non_empty = this.cells.filter(cell => cell != -1);
         let counts = {};
         let max_count = 0;
-        non_empty.forEach(x => {
+        this.non_empty().forEach(x => {
             if (counts[x]) {
                 counts[x] += 1;
             } else {
@@ -75,11 +78,8 @@ class Column {
     }
 
     score() {
-        const sum = non_empty.reduce((a, b) => a + b, 0);
         const counts = this.die_counts();
-        if (counts.max_count == 3) return 3 * sum;
-        else if (counts.max_count == 2) return 2 * sum;
-        else return sum;
+        return this.non_empty().reduce((sum, cell) => sum + cell * counts[cell], 0);
     }
 
     negate(die) {
@@ -120,7 +120,7 @@ class Player {
     }
 
     score() {
-        return this.columns.reduce((a, b) => a.score() + b.score(), 0);
+        return this.columns.reduce((sum, col) => sum + col.score(), 0);
     }
 
     negate({column, die}) {
@@ -186,20 +186,29 @@ class Graphics {
                 dropShadowBlur: 4,
                 dropShadowAngle: Math.PI / 6,
                 dropShadowDistance: 6,
-                wordWrap: true,
-                wordWrapWidth: 440,
                 lineJoin: 'round',
             });
+        const score_style = 
+        new PIXI.TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 46,
+            fill: ['#ffffff'],
+            stroke: '#4a1850',
+            strokeThickness: 5,
+            wordWrapWidth: 440,
+            lineJoin: 'round',
+        });
         this.dice_styles = {
             1: dice_style(['#ffffff', '#00ff99']),
             2: dice_style(['#ffffff', "#ffff00"]),
-            3: dice_style(['#5ffcfc', "#9e5ffc"])
+            3: dice_style(['#5ffcfc', "#9e5ffc"]),
+            score: score_style
         };
     }
 
     addChild(child) {
-        this.app.stage.addChild(child);
         this.children.push(child);
+        return this.app.stage.addChild(child);
     }
 
     erase() {
@@ -238,7 +247,6 @@ class Graphics {
             cy += CELL_SIZE + PADDING;
         }
         let on_click = () => {
-            console.log("click", game.turn, game.die, column.which);
             if (game.valid_move(column.which)) {
                 game.player_move(column.which);
                 redraw();
@@ -250,7 +258,7 @@ class Graphics {
         parent.addChild(container);
     }
 
-    draw_player({x, y, player, flip, game, redraw}) {
+    draw_player_board({x, y, player, flip, game, redraw}) {
         let container = new PIXI.Container();
         let cx = x;
         let columns = player.columns;
@@ -258,7 +266,17 @@ class Graphics {
             this.draw_column(container, {x: cx, y, column, flip, game, redraw});
             cx += CELL_SIZE + PADDING;
         }
-        this.addChild(container);
+        return this.addChild(container);
+    }
+
+    draw_player(args) {
+        let board = this.draw_player_board(args);
+        let boardBounds = board.getBounds();
+        let score = args.player.score();
+        let scoreText  = new PIXI.Text("Score: " + String(score), this.dice_styles["score"]);
+        scoreText.x = boardBounds.x + boardBounds.width + 2 * PADDING;
+        scoreText.y = boardBounds.y + PADDING;
+        this.addChild(scoreText);
     }
 
     draw_game({x, y, game}) {
