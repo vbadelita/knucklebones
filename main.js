@@ -15,6 +15,14 @@ class Arr {
     static exists(arr, f) {
         return arr.findIndex(f) != -1;
     }
+
+    static rev(arr) {
+        let result = [];
+        for (const x of arr) {
+            result.push(x);
+        }
+        return result;
+    }
 }
 
 class Rand {
@@ -179,45 +187,35 @@ class Graphics {
         this.children = [];
     }
 
-    draw_cell({x, y, cell, die_count}) {
+    draw_cell({x, y, die, die_count}) {
         const graphics = new PIXI.Graphics();
         graphics.beginFill(CELL_COLOUR);
         graphics.drawRect(x, y, CELL_SIZE, CELL_SIZE);
         graphics.endFill();
         this.addChild(graphics);
-        if (cell == -1) return;
+        if (die == -1) return;
         else {
-            let die = new PIXI.Text(String(cell), this.dice_styles[die_count]);
-            die.x = x + 30;
-            die.y = y + 20;
-            this.addChild(die);
+            let text = new PIXI.Text(String(die), this.dice_styles[die_count]);
+            text.x = x + 30;
+            text.y = y + 20;
+            this.addChild(text);
         }
     }
 
     draw_column({x, y, column, flip}) {
         let cy = y;
-        let cells = flip ? column.cells : column.cells;
+        let cells = flip ? Arr.rev(column.cells) : column.cells;
         let die_counts = column.die_counts();
-        let draw = (cell) => {
-            let args = {x, y: cy, cell, die_count: die_counts[cell]};
+        for (const die of cells) {
+            let args = {x, y: cy, die, die_count: die_counts[die]};
 
             this.draw_cell(args);
             cy += CELL_SIZE + PADDING;
-        };
-        if (flip) {
-            // javascript reverses in place so I'm doing it by hand
-            for (let i = cells.length - 1; i >= 0; i -= 1) {
-                draw(cells[i]);
-            }
-        } else {
-            for (const cell of cells) {
-                draw(cell);
-            }
         }
-
     }
 
     draw_player({x, y, player, flip}) {
+        // let context = new PIXI.Context();
         let cx = x;
         let columns = player.columns;
         for (const column of columns) {
