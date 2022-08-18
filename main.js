@@ -41,11 +41,12 @@ class Rand {
   
 
 class Column {
-    constructor() {
+    constructor(which) {
         // CR-someday: This is a bit hacky. We consider a cell to have a die if it's
         // value is not -1. Otherwise it's an empty cell. There are other hacks
         // in the code that treat a cell and a die as interchangable and it's confugsing.
         this.cells = Arr.init(3, _ => -1);
+        this.which = which;
     }
 
     is_full() {
@@ -95,8 +96,9 @@ class Column {
 }
 
 class Player {
-    constructor() {
-        this.columns = Arr.init(3, _ => new Column());
+    constructor(which) {
+        this.columns = Arr.init(3, i => new Column(i));
+        this.which = which;
     }
 
     is_full() {
@@ -128,7 +130,7 @@ class Player {
 class Game {
 
     constructor() {
-        this.players = Arr.init(2, _ => new Player());
+        this.players = Arr.init(2, i => new Player(i));
         this.turn = Rand.int(2);
         this.die = Rand.die();
     }
@@ -137,7 +139,7 @@ class Game {
         return Arr.exists(this.players, player => player.is_full());
     }
 
-    next_turn(player_choice) {
+    next_turn() {
         if (this.game_over()) return;
         
         this.die = Rand.int(6) + 1;
@@ -146,6 +148,10 @@ class Game {
 
     available_moves() {
         return this.players[this.turn].possible_moves();
+    }
+
+    valid_move(column) {
+        return !this.game_over() && this.available_moves().indexOf(column) != -1;
     }
 
     player_move(column) {
@@ -220,7 +226,7 @@ class Graphics {
         parent.addChild(container);
     }
 
-    draw_column(parent, {x, y, column, flip}) {
+    draw_column(parent, {x, y, column, flip, game, redraw}) {
         let container = new PIXI.Container();
         let cy = y;
         let cells = flip ? Arr.rev(column.cells) : column.cells;
@@ -231,15 +237,25 @@ class Graphics {
             this.draw_cell(container, args);
             cy += CELL_SIZE + PADDING;
         }
+        let on_click = () => {
+            console.log("click", game.turn, game.die, column.which);
+            if (game.valid_move(column.which)) {
+                game.player_move(column.which);
+                redraw();
+            }
+        };
+        container.interactive = true;
+        container.on("click", on_click);
+        container.on("tap", on_click);
         parent.addChild(container);
     }
 
-    draw_player({x, y, player, flip}) {
+    draw_player({x, y, player, flip, game, redraw}) {
         let container = new PIXI.Container();
         let cx = x;
         let columns = player.columns;
         for (const column of columns) {
-            this.draw_column(container, {x: cx, y, column, flip});
+            this.draw_column(container, {x: cx, y, column, flip, game, redraw});
             cx += CELL_SIZE + PADDING;
         }
         this.addChild(container);
@@ -247,9 +263,13 @@ class Graphics {
 
     draw_game({x, y, game}) {
         let cy = y;
-        this.draw_player({x, y: cy, player: game.players[0], flip: true});
+        let redraw = () => {
+            this.erase();
+            this.draw_game({x, y, game});
+        }
+        this.draw_player({x, y: cy, player: game.players[0], flip: true, game, redraw});
         cy += PLAYER_SIZE + 100;
-        this.draw_player({x, y: cy, player: game.players[1], flip: false});
+        this.draw_player({x, y: cy, player: game.players[1], flip: false, game, redraw});
     }
 }
 
@@ -258,11 +278,11 @@ const graphics = new Graphics();
 let game = new Game();
 graphics.draw_game({x:20, y:20, game});
 
-setInterval(() => {
-    if (!game.game_over()) {
-        graphics.erase();
-        let moves = game.available_moves();
-        game.player_move(Rand.pick(moves));
-        graphics.draw_game({x:20, y:20, game});
-    }
-}, 500);
+// setInterval(() => {
+//     if (!game.game_over()) {
+//         graphics.erase();
+//         let moves = game.available_moves();
+//         game.player_move(Rand.pick(moves));
+//         graphics.draw_game({x:20, y:20, game});
+//     }
+// }, 500);
