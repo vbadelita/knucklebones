@@ -187,41 +187,45 @@ class Graphics {
         this.children = [];
     }
 
-    draw_cell({x, y, die, die_count}) {
-        const graphics = new PIXI.Graphics();
-        graphics.beginFill(CELL_COLOUR);
-        graphics.drawRect(x, y, CELL_SIZE, CELL_SIZE);
-        graphics.endFill();
-        this.addChild(graphics);
-        if (die == -1) return;
-        else {
+    draw_cell(parent, {x, y, die, die_count}) {
+        let container = new PIXI.Container();
+        const box = new PIXI.Graphics();
+        box.beginFill(CELL_COLOUR);
+        box.drawRect(x, y, CELL_SIZE, CELL_SIZE);
+        box.endFill();
+        container.addChild(box);
+        if (die != -1) {
             let text = new PIXI.Text(String(die), this.dice_styles[die_count]);
             text.x = x + 30;
             text.y = y + 20;
-            this.addChild(text);
+            container.addChild(text);
         }
+        parent.addChild(container);
     }
 
-    draw_column({x, y, column, flip}) {
+    draw_column(parent, {x, y, column, flip}) {
+        let container = new PIXI.Container();
         let cy = y;
         let cells = flip ? Arr.rev(column.cells) : column.cells;
         let die_counts = column.die_counts();
         for (const die of cells) {
             let args = {x, y: cy, die, die_count: die_counts[die]};
 
-            this.draw_cell(args);
+            this.draw_cell(container, args);
             cy += CELL_SIZE + PADDING;
         }
+        parent.addChild(container);
     }
 
     draw_player({x, y, player, flip}) {
-        // let context = new PIXI.Context();
+        let container = new PIXI.Container();
         let cx = x;
         let columns = player.columns;
         for (const column of columns) {
-            this.draw_column({x: cx, y, column, flip});
+            this.draw_column(container, {x: cx, y, column, flip});
             cx += CELL_SIZE + PADDING;
         }
+        this.addChild(container);
     }
 
     draw_game({x, y, game}) {
@@ -233,16 +237,6 @@ class Graphics {
 }
 
 const graphics = new Graphics();
-// let column = new Column();
-// column.add_die(2);
-// column.add_die(6);
-// console.log(column);
-// graphics.draw_column({x:20, y:60, column, flip: true});
-
-// let player = new Player();
-// player.add_die({column:0, die:2});
-// player.add_die({column:2, die:6});
-// graphics.draw_player({x:20, y: 60, player, flip: true});
 
 let game = new Game();
 graphics.draw_game({x:20, y:20, game});
