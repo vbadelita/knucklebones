@@ -29,6 +29,14 @@ class Rand {
     static int(n) {
         return Math.floor(Math.random() * n);
     }
+
+    static die() {
+        return Rand.int(6) + 1;
+    }
+
+    static pick(arr) {
+        return arr[Rand.int(arr.length)];
+    }
 }
   
 
@@ -117,11 +125,12 @@ class Player {
         this.columns[column].negate(die);
     }
 }
-
 class Game {
+
     constructor() {
         this.players = Arr.init(2, _ => new Player());
         this.turn = Rand.int(2);
+        this.die = Rand.die();
     }
 
     game_over() {
@@ -130,15 +139,20 @@ class Game {
 
     next_turn(player_choice) {
         if (this.game_over()) return;
-
         
-        let die = Rand.int(6) + 1;
-        let available_choices = this.players[this.turn].possible_moves();
-        let choice = player_choice({player: this.turn, die, available_choices});
-        let move = {column: choice, die};
+        this.die = Rand.int(6) + 1;
+        this.turn = 1 - this.turn;
+    }
+
+    available_moves() {
+        return this.players[this.turn].possible_moves();
+    }
+
+    player_move(column) {
+        let move = {column, die: this.die};
         this.players[this.turn].add_die(move);
         this.players[1 - this.turn].negate(move);
-        this.turn = 1 - this.turn;
+        this.next_turn();
     }
 }
 
@@ -210,7 +224,6 @@ class Graphics {
         let container = new PIXI.Container();
         let cy = y;
         let cells = flip ? Arr.rev(column.cells) : column.cells;
-        console.log(flip, cells);
         let die_counts = column.die_counts();
         for (const die of cells) {
             let args = {x, y: cy, die, die_count: die_counts[die]};
@@ -248,8 +261,8 @@ graphics.draw_game({x:20, y:20, game});
 setInterval(() => {
     if (!game.game_over()) {
         graphics.erase();
-        game.next_turn(({player, die, available_choices}) =>
-            available_choices[Rand.int(available_choices.length)]);
+        let moves = game.available_moves();
+        game.player_move(Rand.pick(moves));
         graphics.draw_game({x:20, y:20, game});
     }
 }, 500);
