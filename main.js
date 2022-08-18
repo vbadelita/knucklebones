@@ -18,8 +18,8 @@ class Arr {
 
     static rev(arr) {
         let result = [];
-        for (const x of arr) {
-            result.push(x);
+        for (let i = arr.length - 1; i >= 0; i -= 1) {
+            result.push(arr[i]);
         }
         return result;
     }
@@ -34,6 +34,9 @@ class Rand {
 
 class Column {
     constructor() {
+        // CR-someday: This is a bit hacky. We consider a cell to have a die if it's
+        // value is not -1. Otherwise it's an empty cell. There are other hacks
+        // in the code that treat a cell and a die as interchangable and it's confugsing.
         this.cells = Arr.init(3, _ => -1);
     }
 
@@ -207,6 +210,7 @@ class Graphics {
         let container = new PIXI.Container();
         let cy = y;
         let cells = flip ? Arr.rev(column.cells) : column.cells;
+        console.log(flip, cells);
         let die_counts = column.die_counts();
         for (const die of cells) {
             let args = {x, y: cy, die, die_count: die_counts[die]};
