@@ -244,6 +244,89 @@ class Graphics {
         this.children = [];
     }
 
+    draw_die(parent, {x, y, die, die_count}) {
+        const DIE_SIZE = 180;
+        const DIE_PADDING = (CELL_SIZE - DIE_SIZE) / 2;
+        const PIP_RADIUS = 15;
+        const PIP_SPACING = DIE_SIZE / 3;
+        
+        // Color mapping based on die_count (same as text styles)
+        const dieColors = {
+            1: ['#ffffff', '#00ff99'],
+            2: ['#ffffff', "#ffff00"],
+            3: ['#5ffcfc', "#9e5ffc"]
+        };
+        const colors = dieColors[die_count] || dieColors[1];
+        
+        let container = new PIXI.Container();
+        
+        // Create gradient texture for dice background
+        const canvas = document.createElement('canvas');
+        canvas.width = DIE_SIZE;
+        canvas.height = DIE_SIZE;
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, DIE_SIZE, DIE_SIZE);
+        gradient.addColorStop(0, colors[0]);
+        gradient.addColorStop(1, colors[1]);
+        ctx.fillStyle = gradient;
+        const radius = 20;
+        ctx.beginPath();
+        ctx.moveTo(radius, 0);
+        ctx.lineTo(DIE_SIZE - radius, 0);
+        ctx.quadraticCurveTo(DIE_SIZE, 0, DIE_SIZE, radius);
+        ctx.lineTo(DIE_SIZE, DIE_SIZE - radius);
+        ctx.quadraticCurveTo(DIE_SIZE, DIE_SIZE, DIE_SIZE - radius, DIE_SIZE);
+        ctx.lineTo(radius, DIE_SIZE);
+        ctx.quadraticCurveTo(0, DIE_SIZE, 0, DIE_SIZE - radius);
+        ctx.lineTo(0, radius);
+        ctx.quadraticCurveTo(0, 0, radius, 0);
+        ctx.closePath();
+        ctx.fill();
+        
+        const dieTexture = PIXI.Texture.from(canvas);
+        const dieSprite = new PIXI.Sprite(dieTexture);
+        dieSprite.x = x + DIE_PADDING;
+        dieSprite.y = y + DIE_PADDING;
+        container.addChild(dieSprite);
+        
+        // Draw pips based on die value
+        const centerX = x + DIE_PADDING + DIE_SIZE / 2;
+        const centerY = y + DIE_PADDING + DIE_SIZE / 2;
+        const pipPositions = {
+            1: [[centerX, centerY]],
+            2: [[centerX - PIP_SPACING, centerY - PIP_SPACING], 
+                [centerX + PIP_SPACING, centerY + PIP_SPACING]],
+            3: [[centerX - PIP_SPACING, centerY - PIP_SPACING], 
+                [centerX, centerY],
+                [centerX + PIP_SPACING, centerY + PIP_SPACING]],
+            4: [[centerX - PIP_SPACING, centerY - PIP_SPACING],
+                [centerX + PIP_SPACING, centerY - PIP_SPACING],
+                [centerX - PIP_SPACING, centerY + PIP_SPACING],
+                [centerX + PIP_SPACING, centerY + PIP_SPACING]],
+            5: [[centerX - PIP_SPACING, centerY - PIP_SPACING],
+                [centerX + PIP_SPACING, centerY - PIP_SPACING],
+                [centerX, centerY],
+                [centerX - PIP_SPACING, centerY + PIP_SPACING],
+                [centerX + PIP_SPACING, centerY + PIP_SPACING]],
+            6: [[centerX - PIP_SPACING, centerY - PIP_SPACING],
+                [centerX - PIP_SPACING, centerY],
+                [centerX - PIP_SPACING, centerY + PIP_SPACING],
+                [centerX + PIP_SPACING, centerY - PIP_SPACING],
+                [centerX + PIP_SPACING, centerY],
+                [centerX + PIP_SPACING, centerY + PIP_SPACING]]
+        };
+        
+        const pips = new PIXI.Graphics();
+        pips.beginFill(0x000000);
+        for (const [pipX, pipY] of pipPositions[die]) {
+            pips.drawCircle(pipX, pipY, PIP_RADIUS);
+        }
+        pips.endFill();
+        container.addChild(pips);
+        
+        parent.addChild(container);
+    }
+
     draw_cell(parent, {x, y, die, die_count}) {
         let container = new PIXI.Container();
         const box = new PIXI.Graphics();
@@ -252,11 +335,7 @@ class Graphics {
         box.endFill();
         container.addChild(box);
         if (die != -1) {
-            let text = new PIXI.Text(String(die), this.text_styles[die_count]);
-            text.anchor.set(0.5, 0.5);
-            text.x = x + CELL_SIZE / 2;
-            text.y = y + CELL_SIZE / 2;
-            container.addChild(text);
+            this.draw_die(container, {x, y, die, die_count});
         }
         parent.addChild(container);
     }
@@ -306,10 +385,9 @@ class Graphics {
         container.addChild(scoreText);
         if (!args.game.game_over() && args.player.which == args.game.turn) {
             let die = args.game.die;
-            let dieText = new PIXI.Text(String(die), this.text_styles["next_move"]);
-            dieText.x = boardBounds.x + boardBounds.width + 70;
-            dieText.y = boardBounds.y + boardBounds.height / 2 - 50;
-            container.addChild(dieText);
+            let dieX = boardBounds.x + boardBounds.width + 2 * PADDING;
+            let dieY = boardBounds.y + boardBounds.height / 2 - 90;
+            this.draw_die(container, {x: dieX, y: dieY, die, die_count: 1});
         }
         return parent.addChild(container);
     }
