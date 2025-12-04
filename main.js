@@ -379,10 +379,14 @@ class Graphics {
         let board = this.draw_player_board(container, args);
         let boardBounds = board.getBounds();
         let score = args.player.score();
-        let scoreText  = new PIXI.Text("Score: " + String(score), this.text_styles["score"]);
-        scoreText.x = boardBounds.x + boardBounds.width + 2 * PADDING;
-        scoreText.y = boardBounds.y + PADDING;
-        container.addChild(scoreText);
+        let scoreLabel = new PIXI.Text("Score:", this.text_styles["score"]);
+        scoreLabel.x = boardBounds.x + boardBounds.width + 2 * PADDING;
+        scoreLabel.y = boardBounds.y + PADDING;
+        container.addChild(scoreLabel);
+        let scoreValue = new PIXI.Text(String(score), this.text_styles["score"]);
+        scoreValue.x = boardBounds.x + boardBounds.width + 2 * PADDING;
+        scoreValue.y = scoreLabel.y + scoreLabel.height + PADDING;
+        container.addChild(scoreValue);
         if (!args.game.game_over() && args.player.which == args.game.turn) {
             let die = args.game.die;
             let dieX = boardBounds.x + boardBounds.width + 2 * PADDING;
