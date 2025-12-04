@@ -162,20 +162,20 @@ class Game {
     }
 }
 
-const CELL_SIZE = 100;
+const CELL_SIZE = 250;
 const CELL_COLOUR = 0xDE3249;
-const PADDING = 5;
+const PADDING = 10;
 const PLAYER_SIZE = 3 * CELL_SIZE + 3 * PADDING;
 
 class Graphics {
     constructor() {
-        this.app = new PIXI.Application({ width: 640, height: 960 });
+        this.app = new PIXI.Application({ width: 1280, height: 1920 });
         document.body.appendChild(this.app.view);
         this.children = []
         const dice_style = (fill) =>
             new PIXI.TextStyle({
                 fontFamily: 'Arial',
-                fontSize: 46,
+                fontSize: 200,
                 fontStyle: 'italic',
                 fontWeight: 'bold',
                 fill, // gradient
@@ -191,7 +191,7 @@ class Graphics {
         const score_style = 
             new PIXI.TextStyle({
                 fontFamily: 'Arial',
-                fontSize: 46,
+                fontSize: 100,
                 fill: ['#ffffff'],
                 strokeThickness: 5,
                 wordWrapWidth: 440,
@@ -200,7 +200,7 @@ class Graphics {
         const next_move_style = 
             new PIXI.TextStyle({
                 fontFamily: 'Arial',
-                fontSize: 100,
+                fontSize: 200,
                 stroke: '#4a1850',
                 fill: ['#ffffff', '#00ff99'],
                 fontStyle: 'italic',
@@ -212,7 +212,7 @@ class Graphics {
         const game_over_style = 
             new PIXI.TextStyle({
                 fontFamily: 'Arial',
-                fontSize: 50,
+                fontSize: 100,
                 stroke: '#4a1850',
                 fill: ['#ffffff'],
                 fontStyle: 'italic',
@@ -253,8 +253,9 @@ class Graphics {
         container.addChild(box);
         if (die != -1) {
             let text = new PIXI.Text(String(die), this.text_styles[die_count]);
-            text.x = x + 30;
-            text.y = y + 20;
+            text.anchor.set(0.5, 0.5);
+            text.x = x + CELL_SIZE / 2;
+            text.y = y + CELL_SIZE / 2;
             container.addChild(text);
         }
         parent.addChild(container);
@@ -303,8 +304,8 @@ class Graphics {
         scoreText.x = boardBounds.x + boardBounds.width + 2 * PADDING;
         scoreText.y = boardBounds.y + PADDING;
         container.addChild(scoreText);
-        if (!game.game_over && args.player.which == args.game.turn) {
-            let die = game.die;
+        if (!args.game.game_over() && args.player.which == args.game.turn) {
+            let die = args.game.die;
             let dieText = new PIXI.Text(String(die), this.text_styles["next_move"]);
             dieText.x = boardBounds.x + boardBounds.width + 70;
             dieText.y = boardBounds.y + boardBounds.height / 2 - 50;
